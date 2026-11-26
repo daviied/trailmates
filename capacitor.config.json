@@ -1,0 +1,7 @@
+{
+  "appId": "com.trailmates.app",
+  "appName": "TrailMates",
+  "webDir": "public",
+  "server": { "androidScheme": "https", "cleartext": true },
+  "android": { "allowMixedContent": true }
+}

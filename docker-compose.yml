@@ -1,0 +1,22 @@
+# Paste into CasaOS: App Store > Custom Install > Import (Docker Compose)
+name: trailmates
+services:
+  trailmates:
+    image: ghcr.io/daviied/trailmates:latest
+    container_name: trailmates
+    restart: unless-stopped
+    ports:
+      - "8095:8080"
+    environment:
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: changeme   # used only on first start; change it in the app after
+      TZ: America/Denver
+      # TILE_URL: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+    volumes:
+      - /DATA/AppData/trailmates:/data
+x-casaos:
+  title:
+    en_us: TrailMates
+  icon: https://raw.githubusercontent.com/daviied/trailmates/main/public/icons/icon-192.png
+  port_map: "8095"
+  main: trailmates

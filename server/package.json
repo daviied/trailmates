@@ -1,0 +1,17 @@
+{
+  "name": "trailmates-server",
+  "version": "1.0.0",
+  "description": "TrailMates server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test ../test/*.test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.10.0",
+    "express": "^4.22.3"
+  }
+}

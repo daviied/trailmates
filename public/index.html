@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5130">
+<title>TrailMates</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <button id="backBtn" class="hdr hidden" aria-label="Back">‹ Back</button>
+  <h1 id="title">TrailMates</h1>
+  <button id="setBtn" class="hdr hidden" aria-label="Settings">⚙︎</button>
+</header>
+<div id="offlineBar" class="hidden">No signal. The app still works with saved trails.</div>
+
+<main>
+  <!-- LOGIN -->
+  <section id="scr-login" class="scr">
+    <div class="card">
+      <h2>Welcome</h2>
+      <label id="serverWrap">Server address
+        <input id="lServer" type="url" inputmode="url" autocomplete="url" placeholder="https://hike.example.com">
+      </label>
+      <label>Your name
+        <input id="lUser" autocomplete="username" autocapitalize="none">
+      </label>
+      <label>Password
+        <input id="lPass" type="password" autocomplete="current-password">
+      </label>
+      <button id="loginBtn" class="big go">Log In</button>
+      <p id="loginErr" class="err"></p>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="scr-home" class="scr hidden">
+    <button id="everyoneBtn" class="big blue">🧭 See Everyone on the Map</button>
+    <h2>Trails</h2>
+    <div id="trailList"></div>
+    <button id="addTrailBtn" class="big plain">＋ Add a Trail (GPX file)</button>
+    <input id="gpxFile" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml,application/octet-stream" hidden>
+    <p class="hint">To get a trail from AllTrails: open the trail on the AllTrails website, choose <b>Download Route</b> as <b>GPX</b>, then tap “Add a Trail” here.</p>
+  </section>
+
+  <!-- HIKE -->
+  <section id="scr-hike" class="scr hidden">
+    <div id="map"></div>
+    <div id="mapBtns">
+      <button id="centerBtn" class="mapbtn">📍 Me</button>
+      <button id="fitBtn" class="mapbtn">🗺 Trail</button>
+    </div>
+    <div id="trailOnly">
+      <div id="offTrail" class="warn hidden"></div>
+      <div class="stats">
+        <div class="stat"><span>Walked</span><b id="sGone">–</b></div>
+        <div class="stat"><span>Left</span><b id="sLeft">–</b></div>
+        <div class="stat"><span id="sTimeLbl">Time left</span><b id="sTime">–</b></div>
+        <div class="stat"><span>Done by</span><b id="sEta">–</b></div>
+      </div>
+      <div class="substats"><span id="sElev"></span><span id="sElapsed"></span></div>
+      <canvas id="elev" aria-label="Elevation graph"></canvas>
+      <button id="startBtn" class="big go">▶ Start Hike</button>
+      <button id="offlineBtn" class="big plain">⬇ Save Map for No Signal</button>
+      <div id="dl" class="hidden"><div id="dlBar"></div><span id="dlTxt"></span></div>
+    </div>
+    <h2>Other Hikers</h2>
+    <div id="people"><p class="hint">No one else is out right now.</p></div>
+    <button id="delTrailBtn" class="small danger hidden">Delete this trail</button>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="scr-settings" class="scr hidden">
+    <div class="card">
+      <h2>Text size</h2>
+      <div class="seg" data-key="text"><button data-v="1">Normal</button><button data-v="1.15">Large</button><button data-v="1.3">Huge</button></div>
+      <h2>Units</h2>
+      <div class="seg" data-key="units"><button data-v="imperial">Miles / Feet</button><button data-v="metric">Km / Meters</button></div>
+      <h2>My walking speed</h2>
+      <div class="seg" data-key="pace"><button data-v="3">Slow</button><button data-v="4">Normal</button><button data-v="5">Fast</button></div>
+      <p class="hint">Used for time estimates. After 10 minutes of hiking, the app learns your real speed.</p>
+    </div>
+    <div class="card">
+      <h2>Change my password</h2>
+      <input id="newPass" type="password" autocomplete="new-password" placeholder="New password">
+      <button id="passBtn" class="big plain">Save Password</button>
+    </div>
+    <div id="adminCard" class="card hidden">
+      <h2>Hikers (admin)</h2>
+      <div id="userList"></div>
+      <input id="nuName" placeholder="Name" autocapitalize="none">
+      <input id="nuPass" placeholder="Password">
+      <label class="chk"><input id="nuAdmin" type="checkbox"> Admin</label>
+      <button id="addUserBtn" class="big plain">＋ Add Hiker</button>
+    </div>
+    <div class="card">
+      <p id="whoami" class="hint"></p>
+      <button id="logoutBtn" class="big danger">Log Out</button>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="hidden"><div class="card"><p id="mText"></p><div class="row"><button id="mNo" class="big plain">No</button><button id="mYes" class="big go">Yes</button></div></div></div>
+<div id="toast" class="hidden"></div>
+
+<script src="vendor/capacitor.js"></script>
+<script src="vendor/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

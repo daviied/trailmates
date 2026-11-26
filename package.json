@@ -1,0 +1,14 @@
+{
+  "name": "trailmates-android",
+  "private": true,
+  "description": "Capacitor wrapper that builds the TrailMates Android app",
+  "scripts": {
+    "android:sync": "cp node_modules/@capacitor/core/dist/capacitor.js public/vendor/ && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.17",
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  }
+}

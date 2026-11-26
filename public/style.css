@@ -1,0 +1,66 @@
+:root {
+  --scale: 1;
+  --bg: #f4f1ea; --card: #ffffff; --ink: #1b1b1b; --muted: #555;
+  --green: #1f6b3a; --green-d: #1f5130; --blue: #1c5fb8; --red: #b3261e; --line: #d7d2c6;
+}
+* { box-sizing: border-box; }
+html { font-size: calc(19px * var(--scale)); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.35; -webkit-tap-highlight-color: transparent; }
+.hidden { display: none !important; }
+#top { position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; gap: 8px; background: var(--green-d); color: #fff; padding: calc(env(safe-area-inset-top) + 8px) 12px 8px; min-height: 60px; }
+#top h1 { flex: 1; margin: 0; font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdr { background: rgba(255,255,255,.15); color: #fff; border: 0; border-radius: 10px; font-size: 1.1rem; padding: 10px 14px; min-height: 48px; }
+#offlineBar { background: #ffe08a; padding: 8px 16px; font-weight: 600; text-align: center; }
+main { max-width: 720px; margin: 0 auto; padding: 12px 16px calc(env(safe-area-inset-bottom) + 24px); }
+h2 { font-size: 1.15rem; margin: 18px 0 8px; }
+.card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.card h2:first-child { margin-top: 0; }
+label { display: block; font-weight: 600; margin-bottom: 12px; }
+input:not([type=checkbox]) { display: block; width: 100%; font-size: 1.1rem; padding: 14px; margin-top: 6px; margin-bottom: 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); }
+input:focus { outline: 3px solid var(--blue); border-color: var(--blue); }
+button { font: inherit; cursor: pointer; }
+.big { display: block; width: 100%; min-height: 64px; font-size: 1.2rem; font-weight: 700; border-radius: 14px; border: 0; margin: 10px 0; padding: 12px; }
+.go { background: var(--green); color: #fff; }
+.go.stop { background: var(--red); }
+.blue { background: var(--blue); color: #fff; }
+.plain { background: #fff; color: var(--ink); border: 2px solid var(--line); }
+.danger { background: #fff; color: var(--red); border: 2px solid var(--red); }
+.small { font-size: .95rem; padding: 10px 14px; border-radius: 10px; margin-top: 20px; }
+.big:active, .trail:active { transform: scale(.98); }
+.err { color: var(--red); font-weight: 600; min-height: 1.2em; }
+.hint { color: var(--muted); font-size: .95rem; }
+.trail { display: block; width: 100%; text-align: left; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; color: var(--ink); }
+.trail b { display: block; font-size: 1.15rem; margin-bottom: 4px; }
+.trail span { color: var(--muted); }
+.badge { display: inline-block; background: #e4f2e7; color: var(--green-d); border-radius: 8px; padding: 2px 8px; font-size: .85rem; font-weight: 700; margin-left: 6px; }
+#scr-hike { position: relative; }
+#map { height: 46vh; min-height: 260px; border-radius: 14px; margin: 0 -4px; z-index: 1; background: #dfe7dc; }
+#mapBtns { position: absolute; top: 10px; right: 8px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
+.mapbtn { background: #fff; border: 2px solid var(--line); border-radius: 12px; min-height: 52px; padding: 8px 12px; font-size: 1rem; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.stat { background: #fff; border-radius: 14px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.stat span { display: block; color: var(--muted); font-size: .95rem; font-weight: 600; }
+.stat b { font-size: 1.7rem; }
+.substats { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--muted); font-weight: 600; margin: 10px 2px; }
+.warn { background: #ffe08a; border-radius: 12px; padding: 10px 14px; font-weight: 700; margin-top: 12px; }
+#elev { display: block; width: 100%; height: 150px; background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+#dl { background: #fff; border: 2px solid var(--line); border-radius: 12px; height: 44px; position: relative; overflow: hidden; }
+#dlBar { position: absolute; inset: 0 auto 0 0; width: 0; background: #bfe3c8; transition: width .2s; }
+#dlTxt { position: relative; display: block; text-align: center; line-height: 40px; font-weight: 700; }
+.person { display: flex; align-items: center; gap: 12px; width: 100%; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 8px; text-align: left; color: var(--ink); }
+.dot { width: 22px; height: 22px; border-radius: 50%; flex: none; border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.3); }
+.person div b { display: block; font-size: 1.1rem; }
+.person div span { color: var(--muted); font-size: .95rem; }
+.seg { display: flex; gap: 6px; margin-bottom: 8px; }
+.seg button { flex: 1; min-height: 56px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-weight: 700; font-size: 1rem; color: var(--ink); }
+.seg button.on { background: var(--green); border-color: var(--green); color: #fff; }
+.urow { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.urow button { border: 2px solid var(--red); color: var(--red); background: #fff; border-radius: 10px; padding: 8px 12px; }
+.chk { display: flex; align-items: center; gap: 10px; }
+.chk input { width: 26px; height: 26px; }
+.row { display: flex; gap: 10px; }
+#modal { position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#modal .card { max-width: 480px; width: 100%; }
+#mText { font-size: 1.2rem; font-weight: 600; }
+#toast { position: fixed; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 20px); z-index: 3000; background: #222; color: #fff; padding: 16px; border-radius: 14px; font-weight: 600; text-align: center; font-size: 1.05rem; }
+.leaflet-tooltip.name { font-weight: 700; font-size: 15px; border: 0; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
