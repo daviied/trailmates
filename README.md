@@ -49,4 +49,4 @@ node --test test/*.test.js
 ## Notes
 
 - AllTrails has no public API and does not permit scraping, so the app imports GPX files only.
-- The default map is [OpenTopoMap](https://opentopomap.org/about), a free service for light use. The app saves only the tiles along each trail, and the server keeps a copy, so each tile is downloaded one time. The server keeps a copy of each tile in `/data/tiles`, so each tile is downloaded one time. For heavy use, set the `TILE_URL_*` variables to a tile service with a key.
+- The default map is [OpenTopoMap](https://opentopomap.org/about), a free service for light use. The app saves only the tiles along each trail, and the server keeps a copy, so each tile is downloaded one time. For heavy use, set the `TILE_URL_*` variables to a tile service with a key.
