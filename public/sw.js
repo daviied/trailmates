@@ -1,5 +1,5 @@
 // App shell cache. Network first, so updates show up; cache when there is no signal.
-const C = 'tm-shell-v1';
+const C = 'tm-shell-v2';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'vendor/leaflet.js', 'vendor/leaflet.css', 'vendor/capacitor.js', 'icons/icon.svg', 'icons/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('tm-shell') && k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

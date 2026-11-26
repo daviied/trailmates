@@ -11,7 +11,7 @@ services:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: changeme   # used only on first start; change it in the app after
       TZ: America/Denver
-      # TILE_URL: https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png
+      # TILE_URL_TOPO: https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png
     volumes:
       - /DATA/AppData/trailmates:/data
 x-casaos:

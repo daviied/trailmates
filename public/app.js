@@ -14,7 +14,7 @@ const S = {
   server: store.get('server', NATIVE ? '' : location.origin),
   token: store.get('token', null),
   user: store.get('user', null),
-  set: Object.assign({ units: 'imperial', pace: '4', text: '1' }, store.get('settings', {})),
+  set: Object.assign({ units: 'imperial', pace: '4', text: '1', map: 'topo' }, store.get('settings', {})),
   trails: store.get('trails', []),
   trail: null,          // current trail with cum arrays
   hike: store.get('hike', null), // {trailId, start}
@@ -106,10 +106,12 @@ async function logout(expired) {
 $('logoutBtn').onclick = () => logout(false);
 
 // ---------- trails ----------
-const offlineSet = () => new Set(store.get('offline', []));
+// Saved maps are stored as "style:trailId" (old saves were plain ids = topo).
+const offlineSet = () => new Set(store.get('offline', []).map(k => typeof k === 'number' ? 'topo:' + k : k));
+const isSaved = id => [...offlineSet()].some(k => k.endsWith(':' + id));
+const isSavedStyle = (id, st = S.set.map) => offlineSet().has(st + ':' + id);
 function renderTrails() {
-  const off = offlineSet();
-  $('trailList').innerHTML = S.trails.length ? S.trails.map(t => `<button class="trail" data-id="${t.id}"><b>${esc(t.name)}${off.has(t.id) ? '<span class="badge">Saved</span>' : ''}${S.hike && S.hike.trailId === t.id ? '<span class="badge">Hiking</span>' : ''}</b><span>${fmtDist(t.distance)} · ↑ ${fmtElev(t.gain)} · about ${fmtDur(estimate(t.distance, t.gain))}</span></button>`).join('')
+  $('trailList').innerHTML = S.trails.length ? S.trails.map(t => `<button class="trail" data-id="${t.id}"><b>${esc(t.name)}${isSaved(t.id) ? '<span class="badge">Saved</span>' : ''}${S.hike && S.hike.trailId === t.id ? '<span class="badge">Hiking</span>' : ''}</b><span>${fmtDist(t.distance)} · ↑ ${fmtElev(t.gain)} · about ${fmtDur(estimate(t.distance, t.gain))}</span></button>`).join('')
     : '<p class="hint">No trails yet. Add one below.</p>';
   for (const b of $('trailList').children) if (b.dataset.id) b.onclick = () => openTrail(Number(b.dataset.id));
 }
@@ -141,7 +143,7 @@ function prepTrail(t) {
 async function openTrail(id) {
   let t = store.get('trail:' + id, null);
   try { t = await api('/api/trails/' + id); } catch (e) { if (!t) return toast(e.message); }
-  if (offlineSet().has(id)) store.set('trail:' + id, t);
+  if (isSaved(id)) store.set('trail:' + id, t);
   S.trail = prepTrail(t); S.prog = null;
   show('hike'); drawTrail(); updateStats(); pollOthers();
   const meta = S.trails.find(x => x.id === id);
@@ -157,24 +159,48 @@ function leaveHike() { /* keep tracking if a hike is active; nothing else needed
 
 // ---------- map ----------
 const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([39.5, -98.35], 4);
-async function tileUrl(z, x, y) {
-  const key = `https://tile.cache/${z}/${x}/${y}.png`;
-  const cache = window.caches ? await caches.open('tiles-topo').catch(() => null) : null;
-  if (cache) { const hit = await cache.match(key); if (hit) return URL.createObjectURL(await hit.blob()); }
-  const r = await fetch(`${S.server}/tiles/${z}/${x}/${y}.png?t=${S.token}`);
+const STYLES = {
+  topo: { name: 'Topo', max: 17, attr: 'Map data © OpenStreetMap contributors, SRTM · Style © OpenTopoMap (CC-BY-SA)' },
+  street: { name: 'Street', max: 18, attr: '© OpenStreetMap contributors' },
+  satellite: { name: 'Satellite', max: 18, attr: 'Imagery © Esri, Maxar, Earthstar Geographics' },
+};
+if (!STYLES[S.set.map]) S.set.map = 'topo';
+const tileKey = (st, k) => `https://tile.cache/${st}/${k}.png`;
+const tileSrc = (st, k) => `${S.server}/tiles/${st}/${k}.png?t=${S.token}`;
+async function tileUrl(st, z, x, y) {
+  const k = `${z}/${x}/${y}`;
+  const cache = window.caches ? await caches.open('tiles').catch(() => null) : null;
+  if (cache) { const hit = await cache.match(tileKey(st, k)); if (hit) return URL.createObjectURL(await hit.blob()); }
+  const r = await fetch(tileSrc(st, k));
   if (!r.ok) throw new Error('tile');
   const blob = await r.blob();
-  if (cache) cache.put(key, new Response(blob, { headers: { 'Content-Type': 'image/png' } })).catch(() => {});
+  if (cache) cache.put(tileKey(st, k), new Response(blob, { headers: { 'Content-Type': blob.type } })).catch(() => {});
   return URL.createObjectURL(blob);
 }
 const CachedTiles = L.TileLayer.extend({
   createTile(c, done) {
     const img = document.createElement('img'); img.alt = '';
-    tileUrl(c.z, c.x, c.y).then(u => { img.onload = () => { URL.revokeObjectURL(u); done(null, img); }; img.src = u; }).catch(e => done(e, img));
+    tileUrl(this.options.style, c.z, c.x, c.y).then(u => { img.onload = () => { URL.revokeObjectURL(u); done(null, img); }; img.src = u; }).catch(e => done(e, img));
     return img;
   },
 });
-new CachedTiles('', { maxZoom: 17, attribution: 'Map data © OpenStreetMap contributors, SRTM · Style © OpenTopoMap (CC-BY-SA)' }).addTo(map);
+let baseLayer = null;
+function setStyle(st) {
+  if (baseLayer) map.removeLayer(baseLayer);
+  const d = STYLES[st];
+  baseLayer = new CachedTiles('', { style: st, maxZoom: d.max, maxNativeZoom: d.max, attribution: d.attr }).addTo(map);
+  map.setMaxZoom(d.max);
+  $('styleBtn').textContent = '🗺 ' + d.name;
+  for (const b of $('styleBox').children) b.classList.toggle('on', b.dataset.v === st);
+  if (S.trail) updateOfflineBtn();
+}
+$('styleBtn').onclick = () => $('styleBox').classList.toggle('hidden');
+$('styleBox').onclick = e => {
+  const v = e.target.dataset.v; if (!v) return;
+  S.set.map = v; store.set('settings', S.set); setStyle(v); $('styleBox').classList.add('hidden');
+  if (!navigator.onLine && S.trail && !isSavedStyle(S.trail.id)) toast(`The ${STYLES[v].name} map is not saved for this trail.`, 4000);
+};
+setStyle(S.set.map);
 let trailLine = null, walkedLine = null, startMk = null, meMk = null, meAcc = null; const otherMks = new Map();
 
 function drawTrail() {
@@ -374,10 +400,10 @@ setInterval(() => { if (S.screen === 'hike' && S.hike) updateStats(); }, 30000);
 // ---------- offline maps ----------
 const lon2x = (lon, z) => Math.floor((lon + 180) / 360 * 2 ** z);
 const lat2y = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
-function tilesFor(t) {
+function tilesFor(t, maxZ = 16) {
   // Tiles along the trail corridor (not the whole box), zoom 10–16.
   const set = new Set();
-  for (let z = 10; z <= 16; z++) {
+  for (let z = 10; z <= Math.min(16, maxZ); z++) {
     const pad = z >= 15 ? 1 : 0;
     for (const p of t.points) {
       const x = lon2x(p[1], z), y = lat2y(p[0], z);
@@ -387,26 +413,26 @@ function tilesFor(t) {
   return [...set];
 }
 function updateOfflineBtn() {
-  const saved = S.trail && offlineSet().has(S.trail.id);
-  $('offlineBtn').textContent = saved ? '✓ Map Saved for No Signal (tap to remove)' : '⬇ Save Map for No Signal';
+  const name = STYLES[S.set.map].name;
+  $('offlineBtn').textContent = S.trail && isSavedStyle(S.trail.id) ? `✓ ${name} Map Saved (tap to remove)` : `⬇ Save ${name} Map for No Signal`;
 }
 $('offlineBtn').onclick = async () => {
-  const t = S.trail, off = offlineSet();
-  if (off.has(t.id)) {
-    if (!(await ask('Remove the saved map for this trail?', 'Remove', 'Keep'))) return;
-    off.delete(t.id); store.set('offline', [...off]); store.del('trail:' + t.id); updateOfflineBtn(); renderTrails(); return;
+  const t = S.trail, off = offlineSet(), st = S.set.map, me = st + ':' + t.id;
+  if (off.has(me)) {
+    if (!(await ask(`Remove the saved ${STYLES[st].name} map for this trail?`, 'Remove', 'Keep'))) return;
+    off.delete(me); store.set('offline', [...off]); if (!isSaved(t.id)) store.del('trail:' + t.id); updateOfflineBtn(); renderTrails(); return;
   }
   if (!window.caches) return toast('This phone cannot save maps.');
-  const list = tilesFor(t); let done = 0, failed = 0;
+  const list = tilesFor(t, STYLES[st].max); let done = 0, failed = 0;
   $('dl').classList.remove('hidden'); $('offlineBtn').disabled = true;
-  const cache = await caches.open('tiles-topo');
+  const cache = await caches.open('tiles');
   const work = async () => {
     while (list.length) {
-      const k = list.pop(), key = `https://tile.cache/${k}.png`;
+      const k = list.pop(), key = tileKey(st, k);
       try {
         if (!(await cache.match(key))) {
-          const r = await fetch(`${S.server}/tiles/${k}.png?t=${S.token}`);
-          if (!r.ok) throw 0; await cache.put(key, new Response(await r.blob(), { headers: { 'Content-Type': 'image/png' } }));
+          const r = await fetch(tileSrc(st, k));
+          if (!r.ok) throw 0; const blob = await r.blob(); await cache.put(key, new Response(blob, { headers: { 'Content-Type': blob.type } }));
         }
       } catch { failed++; }
       done++; const pct = Math.round(done / total * 100);
@@ -418,7 +444,7 @@ $('offlineBtn').onclick = async () => {
   $('dl').classList.add('hidden'); $('offlineBtn').disabled = false;
   if (failed > total * 0.1) return toast('Some of the map did not save. Try again with better signal.', 5000);
   const { cum, up, total: _t, ...plain } = t;
-  store.set('trail:' + t.id, plain); off.add(t.id); store.set('offline', [...off]);
+  store.set('trail:' + t.id, plain); off.add(me); store.set('offline', [...off]);
   updateOfflineBtn(); renderTrails(); toast('Map saved. It will work with no signal.');
 };
 

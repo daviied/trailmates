@@ -9,13 +9,17 @@ const { parseGpx } = require('./gpx');
 
 const PORT = process.env.PORT || 8080;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-const TILE_URL = process.env.TILE_URL || 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
-// Separate cache folder per tile source, so changing TILE_URL never mixes map styles.
-const TILE_DIR = path.join(DATA_DIR, 'tiles', crypto.createHash('sha1').update(TILE_URL).digest('hex').slice(0, 8));
+// Map styles. Each has its own cache folder, so changing a URL never mixes tiles.
+const STYLES = {
+  topo: process.env.TILE_URL_TOPO || process.env.TILE_URL || 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  street: process.env.TILE_URL_STREET || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  satellite: process.env.TILE_URL_SATELLITE || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+};
+const tileDir = style => path.join(DATA_DIR, 'tiles', style + '-' + crypto.createHash('sha1').update(STYLES[style]).digest('hex').slice(0, 8));
 const TILE_UA = process.env.TILE_USER_AGENT || 'TrailMates/1.0 (self-hosted hiking app)';
 const LOCATION_MAX_AGE_MIN = Number(process.env.LOCATION_MAX_AGE_MIN || 60);
 
-fs.mkdirSync(TILE_DIR, { recursive: true });
+fs.mkdirSync(path.join(DATA_DIR, 'tiles'), { recursive: true });
 const db = new Database(path.join(DATA_DIR, 'trailmates.db'));
 db.pragma('journal_mode = WAL');
 db.exec(`
@@ -150,17 +154,19 @@ app.get('/api/locations', auth, (req, res) => {
 
 // --- Map tiles: proxy + disk cache so each tile is fetched from the provider only once ---
 const inflight = new Map();
-app.get('/tiles/:z/:x/:y.png', auth, async (req, res) => {
+const imgType = buf => (buf[0] === 0xff ? 'jpeg' : 'png');
+async function tile(req, res) {
+  const style = req.params.style || 'topo';
   const z = Number(req.params.z), x = Number(req.params.x), y = Number(req.params.y);
-  if (![z, x, y].every(Number.isInteger) || z < 0 || z > 17 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return res.sendStatus(400);
-  const file = path.join(TILE_DIR, String(z), String(x), `${y}.png`);
+  if (!STYLES[style] || ![z, x, y].every(Number.isInteger) || z < 0 || z > 18 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return res.sendStatus(400);
+  const file = path.join(tileDir(style), String(z), String(x), String(y));
   res.set('Cache-Control', 'public, max-age=2592000');
-  if (fs.existsSync(file)) return res.type('png').sendFile(file);
   try {
-    const key = `${z}/${x}/${y}`;
+    if (fs.existsSync(file)) { const buf = fs.readFileSync(file); return res.type(imgType(buf)).send(buf); }
+    const key = `${style}/${z}/${x}/${y}`;
     if (!inflight.has(key)) {
       inflight.set(key, (async () => {
-        const url = TILE_URL.replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{s}', 'abc'[(x + y) % 3]);
+        const url = STYLES[style].replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{s}', 'abc'[(x + y) % 3]);
         const r = await fetch(url, { headers: { 'User-Agent': TILE_UA } });
         if (!r.ok) throw new Error('tile ' + r.status);
         const buf = Buffer.from(await r.arrayBuffer());
@@ -169,9 +175,12 @@ app.get('/tiles/:z/:x/:y.png', auth, async (req, res) => {
         return buf;
       })().finally(() => inflight.delete(key)));
     }
-    res.type('png').send(await inflight.get(key));
+    const buf = await inflight.get(key);
+    res.type(imgType(buf)).send(buf);
   } catch { res.sendStatus(502); }
-});
+}
+app.get('/tiles/:style/:z/:x/:y.png', auth, tile);
+app.get('/tiles/:z/:x/:y.png', auth, tile);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use(express.static(path.join(__dirname, '..', 'public'), {
