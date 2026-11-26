@@ -195,6 +195,7 @@ function setStyle(st) {
   if (S.trail) updateOfflineBtn();
 }
 $('styleBtn').onclick = () => $('styleBox').classList.toggle('hidden');
+map.on('click movestart', () => $('styleBox').classList.add('hidden'));
 $('styleBox').onclick = e => {
   const v = e.target.dataset.v; if (!v) return;
   S.set.map = v; store.set('settings', S.set); setStyle(v); $('styleBox').classList.add('hidden');
