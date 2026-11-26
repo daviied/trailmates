@@ -190,7 +190,7 @@ function setStyle(st) {
   const d = STYLES[st];
   baseLayer = new CachedTiles('', { style: st, maxZoom: d.max, maxNativeZoom: d.max, attribution: d.attr }).addTo(map);
   map.setMaxZoom(d.max);
-  $('styleBtn').textContent = '🗺 ' + d.name;
+  $('styleBtn').title = 'Map style: ' + d.name;
   for (const b of $('styleBox').children) b.classList.toggle('on', b.dataset.v === st);
   if (S.trail) updateOfflineBtn();
 }
