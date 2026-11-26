@@ -159,7 +159,7 @@ function leaveHike() { /* keep tracking if a hike is active; nothing else needed
 const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([39.5, -98.35], 4);
 async function tileUrl(z, x, y) {
   const key = `https://tile.cache/${z}/${x}/${y}.png`;
-  const cache = window.caches ? await caches.open('tiles').catch(() => null) : null;
+  const cache = window.caches ? await caches.open('tiles-topo').catch(() => null) : null;
   if (cache) { const hit = await cache.match(key); if (hit) return URL.createObjectURL(await hit.blob()); }
   const r = await fetch(`${S.server}/tiles/${z}/${x}/${y}.png?t=${S.token}`);
   if (!r.ok) throw new Error('tile');
@@ -174,7 +174,7 @@ const CachedTiles = L.TileLayer.extend({
     return img;
   },
 });
-new CachedTiles('', { maxZoom: 17, attribution: '© OpenStreetMap contributors' }).addTo(map);
+new CachedTiles('', { maxZoom: 17, attribution: 'Map data © OpenStreetMap contributors, SRTM · Style © OpenTopoMap (CC-BY-SA)' }).addTo(map);
 let trailLine = null, walkedLine = null, startMk = null, meMk = null, meAcc = null; const otherMks = new Map();
 
 function drawTrail() {
@@ -399,7 +399,7 @@ $('offlineBtn').onclick = async () => {
   if (!window.caches) return toast('This phone cannot save maps.');
   const list = tilesFor(t); let done = 0, failed = 0;
   $('dl').classList.remove('hidden'); $('offlineBtn').disabled = true;
-  const cache = await caches.open('tiles');
+  const cache = await caches.open('tiles-topo');
   const work = async () => {
     while (list.length) {
       const k = list.pop(), key = `https://tile.cache/${k}.png`;

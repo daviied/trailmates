@@ -21,7 +21,7 @@ Use HTTPS (for example a reverse proxy or Cloudflare tunnel). Phones need HTTPS 
 | Variable | Default | Use |
 |---|---|---|
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | `admin` / random (see log) | First admin. Used only on first start. |
-| `TILE_URL` | OpenStreetMap | Map tile source. The server keeps a copy of each tile in `/data/tiles`. |
+| `TILE_URL` | OpenTopoMap (topo map with contour lines) | Map tile source. The server keeps a copy of each tile in `/data/tiles`. |
 | `LOCATION_MAX_AGE_MIN` | `60` | Hide hikers not seen for this many minutes. |
 
 Data (users, trails, map tiles) is in `/data`.
@@ -46,4 +46,4 @@ node --test test/*.test.js
 ## Notes
 
 - AllTrails has no public API and does not permit scraping, so the app imports GPX files only.
-- OpenStreetMap tiles have a [usage policy](https://operations.osmfoundation.org/policies/tiles/). The app saves only the tiles along each trail, and the server keeps a copy, so each tile is downloaded one time. For heavy use, set `TILE_URL` to a tile service with a key.
+- The default map is [OpenTopoMap](https://opentopomap.org/about), a free service for light use. The app saves only the tiles along each trail, and the server keeps a copy, so each tile is downloaded one time. For heavy use, set `TILE_URL` to a tile service with a key.

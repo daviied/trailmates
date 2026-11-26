@@ -9,11 +9,13 @@ const { parseGpx } = require('./gpx');
 
 const PORT = process.env.PORT || 8080;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-const TILE_URL = process.env.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_URL = process.env.TILE_URL || 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+// Separate cache folder per tile source, so changing TILE_URL never mixes map styles.
+const TILE_DIR = path.join(DATA_DIR, 'tiles', crypto.createHash('sha1').update(TILE_URL).digest('hex').slice(0, 8));
 const TILE_UA = process.env.TILE_USER_AGENT || 'TrailMates/1.0 (self-hosted hiking app)';
 const LOCATION_MAX_AGE_MIN = Number(process.env.LOCATION_MAX_AGE_MIN || 60);
 
-fs.mkdirSync(path.join(DATA_DIR, 'tiles'), { recursive: true });
+fs.mkdirSync(TILE_DIR, { recursive: true });
 const db = new Database(path.join(DATA_DIR, 'trailmates.db'));
 db.pragma('journal_mode = WAL');
 db.exec(`
@@ -151,7 +153,7 @@ const inflight = new Map();
 app.get('/tiles/:z/:x/:y.png', auth, async (req, res) => {
   const z = Number(req.params.z), x = Number(req.params.x), y = Number(req.params.y);
   if (![z, x, y].every(Number.isInteger) || z < 0 || z > 17 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return res.sendStatus(400);
-  const file = path.join(DATA_DIR, 'tiles', String(z), String(x), `${y}.png`);
+  const file = path.join(TILE_DIR, String(z), String(x), `${y}.png`);
   res.set('Cache-Control', 'public, max-age=2592000');
   if (fs.existsSync(file)) return res.type('png').sendFile(file);
   try {
